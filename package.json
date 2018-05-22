@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/deinde/Pure-Node-App-No-Frameworks-Dude-/issues"
   },
-  "homepage": "https://github.com/deinde/Pure-Node-App-No-Frameworks-Dude-#readme"
+  "homepage": "https://github.com/deinde/Pure-Node-App-No-Frameworks-Dude-#readme",
+  "dependencies": {
+    "openssl": "^1.1.0"
+  }
 }

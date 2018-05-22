@@ -17,6 +17,8 @@
  const StringDecoder = require('string_decoder').StringDecoder;
 
 
+ const config = require('./config');
+
 //server should respond to all request with a string
 
 const server = http.createServer(function(req,res){
@@ -26,16 +28,27 @@ const server = http.createServer(function(req,res){
 // pass the req.url object into 'url.parse' method  and return object 
 //with keys and values to neatly
 // work with and set to  variable called 'parseUrl'
-const parseUrl = url.parse(req.url,true);
+// const parseUrl = url.parse(req.url,true);
+
+ var parsedUrl = url.parse(req.url, true);
+
+
 
 //get the path name of the request from the url object called
 // 'parseUrl' and access the property key called 'pathname'
 //to get the requsts path name
-const path = parseUrl.pathname;
+var path = parsedUrl.pathname;
+
 
 //lets trim path make it pretty and keep it clean dude!!!
 
-const trimmedPath = path.replace(/^\/+|\/+$/g,'');
+var trimmedPath = path.replace(/^\/+|\/+$/g,'');
+
+console.log('CHECKING THE PARSED URL trimmed!!!!!!!',path)
+
+
+// var   trimmedPath = path.replace(/^\/+|\/+$/g, '');
+
 
 //Give me the http method please 
 
@@ -47,7 +60,7 @@ const headers = req.headers;
 
 //Give me the query string  from url.parse object set to var parseUrl and go
 //to key word property called 'query'
-const queryString = parseUrl.query;
+const queryString = parsedUrl.query;
 
 //create a ne decoder to handle incoming streams that contain payloads
 const decoder = new StringDecoder('utf-8');
@@ -62,7 +75,12 @@ req.on('data',function(data){
 	buffer += decoder.write(data);
 //here we are choosing the handler the request shall go to
 
-let chosenHandler = typeof(router[trimmedPath]) ==!'undefined' ? router[trimmedPath] : hanldlers.notFound;
+// let chosenHandler = typeof(router[trimmedPath]) !=='undefined' ? router[trimmedPath] : hanldlers.notFound;
+
+// Check the router for a matching path for a handler. If one is not found, use the notFound handler instead.
+var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handelers.notFound;
+
+
 
 // this is the data object 
  data ={
@@ -88,7 +106,8 @@ chosenHandler(data,function(statusCode,payload){
   let payloadString = JSON.stringify(payload);
 
   //here is the response Dude!
-  
+  //specify the json is going to be the response type to the client in the response header
+  res.setHeader('Content-type','application/json');
   //writing to response object with writehead method
   res.writeHead(statusCode);
 
@@ -97,9 +116,7 @@ chosenHandler(data,function(statusCode,payload){
 console.log('the returning response is :',statusCode,payloadString)
 })
 
-hanldlers.sample = function(data,callback){
-    callback(404,{name:'sample handler'});
-}
+
 
 
 
@@ -118,7 +135,7 @@ req.on('end',function(){
   res.end('hello\n');
 
 //log the clients requested path
-console.log('the request is recieved on this path ',trimmedPath+ ' and  with this method =  '+ method + ' with this query string ', queryString)
+console.log('the request is recieved on this path ',trimmedPath + ' and  with this method =  '+ method + ' with this query string ', queryString)
 console.log('request recieved with these headers :',headers);
 console.log('request recieved with this payload :',buffer);
 
@@ -139,20 +156,22 @@ console.log('request recieved with this payload :',buffer);
 
  // start the server and have it listen on to port 3000 
 
-server.listen(3000,function(){
-	console.log('server is listening on port 30000');
+server.listen(config.port,function(){
+	console.log('server is listening on port: '+config.port+ 'right now and the enviroment is: ' + config.envName);
 })
 
-let hanldlers = {};
+// here is all the server logic for both http and https
 
-hanldlers.sample = function(data,callback){
+let handelers = {};
+
+handelers.sample = function(data,callback){
     callback(406,{'name':'sample handler'});
 }
 
-hanldlers.notFound =function(data,callback){
+handelers.notFound =function(data,callback){
      callback(404);
 }
 
 let router ={
-	'sample':hanldlers.sample
+	'sample':handelers.sample
 }
