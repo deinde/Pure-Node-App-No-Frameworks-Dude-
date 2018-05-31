@@ -6,6 +6,19 @@
  // requiring the built in node http server module
 
  const http = require('http');
+ const https = require('https');
+
+
+// require the fs module to help read in my certificate and key
+//from config for https secured connection
+//'fs' stands for file sync . Or [read,file,sync] The keys will be read in aysnchronously
+//Many node function are have either a sync or aysnc function. The one
+//we are using here is sync for key.pem and cert.pem, because we need both read in 
+//synchroniously
+
+
+const fs = require('fs');
+
 
  // requiring the built in node url module
 
@@ -19,12 +32,60 @@
 
  const config = require('./config');
 
+
+//create the secured server here with key and cert (instantiate it Dude!)
 //server should respond to all request with a string
 
-const server = http.createServer(function(req,res){
+
+let httpsServerOptions ={
+ key:fs.readFileSync('./https/key.pem'),
+ cert:fs.readFileSync('./https/cert.pem')
+}
+const httpServer = http.createServer(httpsServerOptions,function(req,res){
+
+	unifiedServer(req,res);
+})
 
 
-//get the url 
+
+// start the server and have it listen on to which ever port is passed 
+
+httpServer.listen(config.httpPort,function(){
+	console.log('server is listening on port : '+config.httpPort+ ' right now and the enviroment is: ' + config.envName);
+})
+
+
+// create the https sever
+
+const httpsServer = https.createServer(function(req,res){
+
+   unifiedServer(req,res);
+   
+})
+
+
+
+//start the https sever
+
+httpsServer.listen(config.httpsPort,function(req,res){
+  console.log('https server is now running on port '+config.httpsPort)
+})
+
+
+
+
+
+
+
+
+
+
+// here is all the server logic for both http and https
+
+let unifiedServer = function(req,res){
+
+
+	//get the url 
 // pass the req.url object into 'url.parse' method  and return object 
 //with keys and values to neatly
 // work with and set to  variable called 'parseUrl'
@@ -73,6 +134,28 @@ let buffer = '';
 //if a stream of data is present on a request and append to buffer var
 req.on('data',function(data){
 	buffer += decoder.write(data);
+
+
+//this is the event listener listening for the end event of a data stream on a request
+//the data stream is sent in the body from client!!!
+
+req.on('end',function(){
+	buffer +=  decoder.end;
+
+
+	//send a response
+
+  res.end('hello\n');
+
+//log the clients requested path
+console.log('the request is recieved on this path ',trimmedPath + ' and  with this method =  '+ method + ' with this query string ', queryString)
+console.log('request recieved with these headers :',headers);
+console.log('request recieved with this payload :',buffer);
+
+  })
+
+
+
 //here we are choosing the handler the request shall go to
 
 // let chosenHandler = typeof(router[trimmedPath]) !=='undefined' ? router[trimmedPath] : hanldlers.notFound;
@@ -100,8 +183,8 @@ chosenHandler(data,function(statusCode,payload){
 
 		//figure out if the payload is present. If is then give it else default
 	//an object
-
-	typeof(payload) ==  'object' ? payload : {};
+	
+	payload = typeof(payload) ==  'object' ? payload :{};
 	//convert the data object to string to send back in response
   let payloadString = JSON.stringify(payload);
 
@@ -114,64 +197,29 @@ chosenHandler(data,function(statusCode,payload){
   //sending the payload with end method
   res.end(payloadString);
 console.log('the returning response is :',statusCode,payloadString)
-})
-
-
-
-
+   });
 
 });
 
 
-//this is the event listener listening for the end event of a data stream on a request
-//the data stream is sent in the body from client!!!
-
-req.on('end',function(){
-	buffer +=  decoder.end;
-
-
-	//send a response
-
-  res.end('hello\n');
-
-//log the clients requested path
-console.log('the request is recieved on this path ',trimmedPath + ' and  with this method =  '+ method + ' with this query string ', queryString)
-console.log('request recieved with these headers :',headers);
-console.log('request recieved with this payload :',buffer);
-
-})
-
-
-
-
-})
-
-
-
-
-
-
-
-
-
- // start the server and have it listen on to port 3000 
-
-server.listen(config.port,function(){
-	console.log('server is listening on port: '+config.port+ 'right now and the enviroment is: ' + config.envName);
-})
-
-// here is all the server logic for both http and https
+}//end of unified function
 
 let handelers = {};
 
+handelers.ping = function(data,callback){
+	callback(200)
+
+}
+
 handelers.sample = function(data,callback){
-    callback(406,{'name':'sample handler'});
+    callback(200,{'name':'sample handler'});
 }
 
 handelers.notFound =function(data,callback){
-     callback(404);
+     callback(404,{});
 }
 
 let router ={
-	'sample':handelers.sample
+	'sample':handelers.sample,
+	'ping':handelers.ping
 }
