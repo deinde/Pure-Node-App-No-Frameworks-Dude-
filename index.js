@@ -8,6 +8,39 @@
  const http = require('http');
  const https = require('https');
 
+ const _data = require('./lib/data');
+
+//test for writing to file from _data module
+
+// _data.create('test','thirdFile',{'Wavy':'Baby!'},function(err){
+// 	console.log('this was the error from writing _data :', err);
+// })
+
+
+//test for reading in data
+
+// _data.read('test','secondfilemade',function(err,data){
+// 	console.log('this was the error from reading _data :', err, 'and this is the data :', data);
+// })
+
+//test to update the data
+
+// _data.update('test','thirdFile',{'New':'This data was updated Dude!!'},function(err){
+	
+//      console.log('this was the error :',err);
+
+// })
+
+//test to  delete file
+
+//if error comes back false then file is deleted
+
+_data.delete('test','secondfilemade',function(err){
+	console.log('This was the error!',err);
+})
+
+
+
 
 // require the fs module to help read in my certificate and key
 //from config for https secured connection
@@ -223,3 +256,6 @@ let router ={
 	'sample':handelers.sample,
 	'ping':handelers.ping
 }
+
+
+
